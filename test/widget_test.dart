@@ -1,13 +1,21 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:provider/provider.dart';
 import 'package:flutter_hello_world/main.dart';
-
+import 'package:flutter_hello_world/providers/car_provider.dart';
 void main() {
-  testWidgets('Hello World screen displays correctly', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Cars app displays correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (context) => CarProvider(),
+        child: const MyApp(),
+      ),
+    );
 
-    expect(find.text('Hello World!'), findsOneWidget);
-    expect(find.text('Hello World'), findsOneWidget);
+    // Verificar que la AppBar se muestra
+    expect(find.text('Cars List'), findsOneWidget);
+    
+    // Verificar que se muestra el CircularProgressIndicator mientras carga
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
   });
 }
