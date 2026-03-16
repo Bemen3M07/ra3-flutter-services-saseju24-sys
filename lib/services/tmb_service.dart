@@ -2,91 +2,92 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/tmb_models.dart';
 
-/// SERVICIO TMB: Consume la API de transporte de Barcelona
-/// 
-/// Registrate en: https://developer.tmb.cat/
-/// Documentación: https://developer.tmb.cat/api-docs/v1
-/// 
-/// ⚠️ CONFIGURA TUS CREDENCIALES AQUÍ:
+/// SERVEI TMB - iBus API
+/// Credencials: https://developer.tmb.cat/
+///
+/// Endpoints implementats:
+///   1. GET /itransit/bus/parades/{codi}  → parada + busos en temps real
+///   2. GET /itransit/bus/parades/        → totes les parades
+///   3. GET /transit/linies/bus/          → totes les línies de bus
 class TMBService {
-  // TODO: Reemplaza estos valores con tus credenciales
-  static const String _appId = 'TU_APP_ID_AQUI';
-  static const String _apiKey = 'TU_API_KEY_AQUI';
+  static const String _appId  = '0d4bcf3c';
+  static const String _apiKey = '23cf9aa8a5320d3f5452104b25fccb37';
   static const String _baseUrl = 'https://api.tmb.cat/v1';
 
-  /// ENDPOINT 1: Buscar paradas por código o nombre
-  /// GET /pois/?searchType=stopCode&searchText={code}
+  /// ENDPOINT 1: Cercar parada per codi i obtenir busos en temps real
+  /// GET /itransit/bus/parades/{codi_parada}
   Future<List<StopModel>> searchStopByCode(String stopCode) async {
     try {
       final uri = Uri.parse(
-        '$_baseUrl/pois/?searchType=stopCode&searchText=$stopCode&app_id=$_appId&app_key=$_apiKey',
+        '$_baseUrl/itransit/bus/parades/$stopCode?app_id=$_appId&app_key=$_apiKey',
       );
+      final response = await http.get(uri);
 
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final List<dynamic> parades = jsonData['parades'] ?? [];
+        return parades.map((p) => StopModel.fromJson(p)).toList();
+      } else {
+        throw Exception('Error ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error cercant parada: $e');
+    }
+  }
+
+  /// ENDPOINT 2: Obtenir autobusos d'una parada (crida individual)
+  /// GET /itransit/bus/parades/{stopId}
+  Future<List<BusModel>> getBusesAtStop(String stopId) async {
+    try {
+      final uri = Uri.parse(
+        '$_baseUrl/itransit/bus/parades/$stopId?app_id=$_appId&app_key=$_apiKey',
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final List<dynamic> parades = jsonData['parades'] ?? [];
+        if (parades.isEmpty) return [];
+        // Busquem la parada exacta pel codi
+        final parada = parades.firstWhere(
+          (p) => p['codi_parada'].toString() == stopId,
+          orElse: () => parades[0],
+        );
+        final List<dynamic> linies = parada['linies_trajectes'] ?? [];
+        return linies.map((l) => BusModel.fromJson(l)).toList();
+      } else {
+        throw Exception('Error ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error obtenint autobusos: $e');
+    }
+  }
+
+  /// ENDPOINT 3: Obtenir totes les línies de bus
+  /// GET /transit/linies/bus/
+  Future<List<LineModel>> getTransitLines() async {
+    try {
+      final uri = Uri.parse(
+        '$_baseUrl/transit/linies/bus/?app_id=$_appId&app_key=$_apiKey',
+      );
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         final List<dynamic> features = jsonData['features'] ?? [];
-
         return features
-            .map((feature) => StopModel.fromJson(feature['properties']))
+            .map((f) => LineModel.fromJson(f['properties'] ?? f))
             .toList();
       } else {
         throw Exception('Error ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Error buscando parada: $e');
+      throw Exception('Error obtenint línies: $e');
     }
   }
 
-  /// ENDPOINT 2: Obtener autobuses que pasan por una parada específica
-  /// GET /pois/{stopId}/buses
-  Future<List<BusModel>> getBusesAtStop(String stopId) async {
-    try {
-      final uri = Uri.parse(
-        '$_baseUrl/pois/$stopId/buses?app_id=$_appId&app_key=$_apiKey',
-      );
-
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        final List<dynamic> buses = jsonData['data']?['buses'] ?? [];
-
-        return buses.map((bus) => BusModel.fromJson(bus)).toList();
-      } else {
-        throw Exception('Error ${response.statusCode}: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error obteniendo autobuses: $e');
-    }
-  }
-
-  /// ENDPOINT 3: Obtener todas las líneas de transporte disponibles
-  /// GET /transit/lines
-  Future<List<LineModel>> getTransitLines() async {
-    try {
-      final uri = Uri.parse(
-        '$_baseUrl/transit/lines?app_id=$_appId&app_key=$_apiKey',
-      );
-
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        final List<dynamic> lines = jsonData['data'] ?? [];
-
-        return lines.map((line) => LineModel.fromJson(line)).toList();
-      } else {
-        throw Exception('Error ${response.statusCode}: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error obteniendo líneas: $e');
-    }
-  }
-
-  /// ENDPOINT ADICIONAL: Obtener paradas cercanas a coordenadas
-  /// GET /transit/near/{latitude}/{longitude}
+  /// ENDPOINT ADDICIONAL: Totes les parades (sense filtre)
+  /// GET /itransit/bus/parades/
   Future<List<StopModel>> getNearbyStops(
     double latitude,
     double longitude, {
@@ -94,23 +95,18 @@ class TMBService {
   }) async {
     try {
       final uri = Uri.parse(
-        '$_baseUrl/transit/near/$latitude/$longitude?radius=$radiusMeters&app_id=$_appId&app_key=$_apiKey',
+        '$_baseUrl/itransit/bus/parades/?app_id=$_appId&app_key=$_apiKey',
       );
-
       final response = await http.get(uri);
-
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        final List<dynamic> features = jsonData['features'] ?? [];
-
-        return features
-            .map((feature) => StopModel.fromJson(feature['properties']))
-            .toList();
+        final List<dynamic> parades = jsonData['parades'] ?? [];
+        return parades.take(20).map((p) => StopModel.fromJson(p)).toList();
       } else {
         throw Exception('Error ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Error obteniendo paradas cercanas: $e');
+      throw Exception('Error obtenint parades: $e');
     }
   }
 }

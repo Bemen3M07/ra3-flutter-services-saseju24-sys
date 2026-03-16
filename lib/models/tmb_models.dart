@@ -2,92 +2,75 @@
 class StopModel {
   final String stopId;
   final String stopName;
-  final double latitude;
-  final double longitude;
-  final String? lines; // Líneas que pasan
+  final List<BusModel> buses;
 
   StopModel({
     required this.stopId,
     required this.stopName,
-    required this.latitude,
-    required this.longitude,
-    this.lines,
+    this.buses = const [],
   });
 
   factory StopModel.fromJson(Map<String, dynamic> json) {
+    final List<dynamic> linies = json['linies_trajectes'] ?? [];
     return StopModel(
-      stopId: json['stop_id'] as String? ?? json['stopId'] as String? ?? '',
-      stopName: json['stop_name'] as String? ?? json['stopName'] as String? ?? '',
-      latitude: (json['geometry']?['coordinates']?[1] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['geometry']?['coordinates']?[0] as num?)?.toDouble() ?? 0.0,
-      lines: json['lines'] as String?,
+      stopId:   (json['codi_parada'] ?? '').toString(),
+      stopName: (json['nom_parada']  ?? '').toString(),
+      buses: linies.map((l) => BusModel.fromJson(l)).toList(),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'stop_id': stopId,
-      'stop_name': stopName,
-      'latitude': latitude,
-      'longitude': longitude,
-      'lines': lines,
-    };
-  }
-
   @override
-  String toString() =>
-      'Stop(id: $stopId, name: $stopName, lat: $latitude, lon: $longitude)';
+  String toString() => 'Stop(id: $stopId, name: $stopName)';
 }
 
-// MODELO: Representa un autobús en una parada
+// MODELO: Representa una línia amb els pròxims autobusos
 class BusModel {
-  final String routeId;
   final String routeName;
   final String destination;
-  final int arrivalTimeSeconds; // Segundos hasta llegada
-  final String busStatus; // "no-service", "in-service", etc.
+  final int arrivalTimestamp; // ms epoch
+  final String busStatus;
 
   BusModel({
-    required this.routeId,
     required this.routeName,
     required this.destination,
-    required this.arrivalTimeSeconds,
+    required this.arrivalTimestamp,
     required this.busStatus,
   });
 
   factory BusModel.fromJson(Map<String, dynamic> json) {
+    final List<dynamic> propersBusos = json['propers_busos'] ?? [];
+    final int tempsArr = propersBusos.isNotEmpty
+        ? (propersBusos[0]['temps_arribada'] ?? 0) as int
+        : 0;
     return BusModel(
-      routeId: json['route_id'] as String? ?? json['routeId'] as String? ?? '',
-      routeName: json['route_short_name'] as String? ?? json['routeName'] as String? ?? '',
-      destination: json['destination'] as String? ?? '',
-      arrivalTimeSeconds: json['arrival_seconds'] as int? ?? json['arrivalSeconds'] as int? ?? 0,
-      busStatus: json['bus_status'] as String? ?? 'unknown',
+      routeName:        (json['nom_linia']      ?? '').toString(),
+      destination:      (json['desti_trajecte'] ?? '').toString(),
+      arrivalTimestamp: tempsArr,
+      busStatus:        propersBusos.isNotEmpty ? 'En servei' : 'Sense servei',
     );
   }
 
-  // Convierte segundos a minutos para mostrar
-  int get arrivalMinutes => (arrivalTimeSeconds / 60).ceil();
-
-  Map<String, dynamic> toJson() {
-    return {
-      'route_id': routeId,
-      'route_name': routeName,
-      'destination': destination,
-      'arrival_seconds': arrivalTimeSeconds,
-      'bus_status': busStatus,
-    };
+  // Minuts fins a l'arribada calculats des del timestamp en ms
+  int get arrivalMinutes {
+    if (arrivalTimestamp == 0) return 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final diff = arrivalTimestamp - now;
+    return (diff / 60000).ceil().clamp(0, 999);
   }
+
+  // Getter de compatibilitat
+  int get arrivalTimeSeconds => (arrivalTimestamp / 1000).round();
 
   @override
   String toString() =>
       'Bus(route: $routeName, dest: $destination, arrival: ${arrivalMinutes}min)';
 }
 
-// MODELO: Información de línea de autobús
+// MODELO: Informació d'una línia de bus
 class LineModel {
   final String routeId;
   final String routeName;
-  final String transportType; // "Metro", "Bus", etc.
+  final String transportType;
   final String? operator;
 
   LineModel({
@@ -99,22 +82,13 @@ class LineModel {
 
   factory LineModel.fromJson(Map<String, dynamic> json) {
     return LineModel(
-      routeId: json['route_id'] as String? ?? '',
-      routeName: json['route_short_name'] as String? ?? json['name'] as String? ?? '',
-      transportType: json['route_type'] as String? ?? 'Bus',
-      operator: json['agency_name'] as String?,
+      routeId:       (json['CODI_LINIA'] ?? json['codi_linia'] ?? json['route_id'] ?? '').toString(),
+      routeName:     (json['NOM_LINIA']  ?? json['nom_linia']  ?? json['name']     ?? '').toString(),
+      transportType: (json['TIPUS_VEHICLE'] ?? json['transit_namespace'] ?? 'Bus').toString(),
+      operator:      (json['NOM_OPERADOR'] ?? json['agency_name'])?.toString(),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'route_id': routeId,
-      'route_name': routeName,
-      'transport_type': transportType,
-      'operator': operator,
-    };
-  }
-
   @override
-  String toString() => 'Line(name: $routeName, type: $transportType)';
+  String toString() => 'Line(id: $routeId, name: $routeName)';
 }

@@ -2,43 +2,43 @@ import 'package:flutter/material.dart';
 import '../models/tmb_models.dart';
 import '../services/tmb_service.dart';
 
-/// CONTROLADOR/PROVIDER: Gestiona el estado de la app de transporte TMB
+/// CONTROLADOR/PROVIDER: Gestiona l'estat de l'app de transport TMB
 class TMBProvider extends ChangeNotifier {
   final TMBService _tmbService = TMBService();
 
-  // Estados para búsqueda de paradas
+  // Estats per a la cerca de parades
   List<StopModel> _stops = [];
   bool _isLoadingStops = false;
   String? _errorStops;
 
-  // Estados para autobuses en parada
+  // Estats per als autobusos d'una parada
   List<BusModel> _buses = [];
   bool _isLoadingBuses = false;
   String? _errorBuses;
   StopModel? _selectedStop;
 
-  // Estados para líneas
+  // Estats per a les línies
   List<LineModel> _lines = [];
   bool _isLoadingLines = false;
   String? _errorLines;
 
-  // Getters para paradas
-  List<StopModel> get stops => _stops;
-  bool get isLoadingStops => _isLoadingStops;
-  String? get errorStops => _errorStops;
+  // Getters parades
+  List<StopModel> get stops        => _stops;
+  bool            get isLoadingStops => _isLoadingStops;
+  String?         get errorStops   => _errorStops;
 
-  // Getters para autobuses
-  List<BusModel> get buses => _buses;
-  bool get isLoadingBuses => _isLoadingBuses;
-  String? get errorBuses => _errorBuses;
-  StopModel? get selectedStop => _selectedStop;
+  // Getters autobusos
+  List<BusModel>  get buses          => _buses;
+  bool            get isLoadingBuses => _isLoadingBuses;
+  String?         get errorBuses     => _errorBuses;
+  StopModel?      get selectedStop   => _selectedStop;
 
-  // Getters para líneas
-  List<LineModel> get lines => _lines;
-  bool get isLoadingLines => _isLoadingLines;
-  String? get errorLines => _errorLines;
+  // Getters línies
+  List<LineModel> get lines          => _lines;
+  bool            get isLoadingLines => _isLoadingLines;
+  String?         get errorLines     => _errorLines;
 
-  /// Buscar parada por código (Endpoint 1)
+  /// ENDPOINT 1: Cercar parada per codi
   Future<void> searchStop(String stopCode) async {
     _isLoadingStops = true;
     _errorStops = null;
@@ -47,21 +47,18 @@ class TMBProvider extends ChangeNotifier {
 
     try {
       _stops = await _tmbService.searchStopByCode(stopCode);
-      _errorStops = null;
-
       if (_stops.isEmpty) {
-        _errorStops = 'No se encontraron paradas con el código: $stopCode';
+        _errorStops = 'No s\'han trobat parades amb el codi: $stopCode';
       }
     } catch (e) {
       _errorStops = e.toString();
-      _stops = [];
     } finally {
       _isLoadingStops = false;
       notifyListeners();
     }
   }
 
-  /// Obtener autobuses en una parada (Endpoint 2)
+  /// ENDPOINT 2: Obtenir autobusos d'una parada
   Future<void> getBusesAtStop(StopModel stop) async {
     _selectedStop = stop;
     _isLoadingBuses = true;
@@ -71,21 +68,18 @@ class TMBProvider extends ChangeNotifier {
 
     try {
       _buses = await _tmbService.getBusesAtStop(stop.stopId);
-      _errorBuses = null;
-
       if (_buses.isEmpty) {
-        _errorBuses = 'No hay autobuses próximos en esta parada';
+        _errorBuses = 'No hi ha autobusos propers en aquesta parada';
       }
     } catch (e) {
       _errorBuses = e.toString();
-      _buses = [];
     } finally {
       _isLoadingBuses = false;
       notifyListeners();
     }
   }
 
-  /// Obtener todas las líneas (Endpoint 3)
+  /// ENDPOINT 3: Obtenir totes les línies
   Future<void> loadAllLines() async {
     _isLoadingLines = true;
     _errorLines = null;
@@ -94,40 +88,15 @@ class TMBProvider extends ChangeNotifier {
 
     try {
       _lines = await _tmbService.getTransitLines();
-      _errorLines = null;
     } catch (e) {
       _errorLines = e.toString();
-      _lines = [];
     } finally {
       _isLoadingLines = false;
       notifyListeners();
     }
   }
 
-  /// Obtener paradas cercanas (Endpoint adicional)
-  Future<void> getNearbyStops(double latitude, double longitude) async {
-    _isLoadingStops = true;
-    _errorStops = null;
-    _stops = [];
-    notifyListeners();
-
-    try {
-      _stops = await _tmbService.getNearbyStops(latitude, longitude);
-      _errorStops = null;
-
-      if (_stops.isEmpty) {
-        _errorStops = 'No hay paradas cercanas';
-      }
-    } catch (e) {
-      _errorStops = e.toString();
-      _stops = [];
-    } finally {
-      _isLoadingStops = false;
-      notifyListeners();
-    }
-  }
-
-  /// Limpiar todos los estados
+  /// Netejar tots els estats
   void reset() {
     _stops = [];
     _buses = [];

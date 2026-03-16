@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/joke_provider.dart';
 
-// VISTA: Interfaz de usuario para mostrar chistes
+// VISTA: Interfaz de usuario para mostrar chistes (Ejercicio 3)
 class JokeScreen extends StatefulWidget {
   const JokeScreen({super.key});
 
@@ -42,7 +42,7 @@ class _JokeScreenState extends State<JokeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.error_outline,
                     color: Colors.red,
                     size: 64,
@@ -76,8 +76,10 @@ class _JokeScreenState extends State<JokeScreen> {
                 children: [
                   // Etiqueta de tipo
                   Chip(
+                    // CORRECCIÓN: withOpacity() deprecado → withValues()
+                    backgroundColor:
+                        Colors.deepPurple.withValues(alpha: 0.2),
                     label: Text(joke.type.toUpperCase()),
-                    backgroundColor: Colors.deepPurple.withOpacity(0.2),
                   ),
                   const SizedBox(height: 32),
 
@@ -85,7 +87,8 @@ class _JokeScreenState extends State<JokeScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.deepPurple.withOpacity(0.1),
+                      // CORRECCIÓN: withOpacity() deprecado → withValues()
+                      color: Colors.deepPurple.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: Colors.deepPurple,
@@ -121,7 +124,8 @@ class _JokeScreenState extends State<JokeScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      // CORRECCIÓN: withOpacity() deprecado → withValues()
+                      color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: Colors.green,
@@ -177,7 +181,7 @@ class _JokeScreenState extends State<JokeScreen> {
         onPressed: () =>
             Provider.of<JokeProvider>(context, listen: false).loadRandomJoke(),
         tooltip: 'Get another joke',
-        child: const Icon(Icons.favorite),
+        child: const Icon(Icons.sentiment_very_satisfied),
       ),
     );
   }
