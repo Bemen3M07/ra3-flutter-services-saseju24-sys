@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/car_provider.dart';
 import 'providers/joke_provider.dart';
+import 'providers/tmb_provider.dart';
 import 'screens/cars_screen.dart';
 import 'screens/joke_screen.dart';
+import 'screens/tmb_screen.dart';
 
 void main() {
   runApp(
@@ -11,6 +13,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (context) => CarProvider()),
         ChangeNotifierProvider(create: (context) => JokeProvider()),
+        ChangeNotifierProvider(create: (context) => TMBProvider()),
       ],
       child: const MyApp(),
     ),
@@ -97,6 +100,28 @@ class HomeScreen extends StatelessWidget {
                     vertical: 16,
                   ),
                   backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 32),
+              
+              // Botón para la app de TMB
+              ElevatedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const TMBScreen()),
+                ),
+                icon: const Icon(Icons.directions_bus, size: 32),
+                label: const Text(
+                  'TMB Barcelona',
+                  style: TextStyle(fontSize: 18),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
                 ),
               ),
